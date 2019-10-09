@@ -15,14 +15,21 @@
   #include <omp.h>
 #endif
 
+#include "stb_image.h"
+#include "stb_image_write.h"
+
 #define FOR(A,X,Y) for(int Y=0;Y<A.height();Y++) for(int X=0;X<A.width();X++)
 
+/*Nearest Neighbor Field Init*/
 A2V2i nnfInit(const V2i& sizeA,
               const V2i& sizeB,
               const int  patchWidth)
 {
+  // Create array of vectors of ints containing Nearest Neighbor Field
+  // NNF is array of vectors, each of those of size 2.
   A2V2i NNF(sizeA);
 
+  // Fill NNF with random positions from an image.
   for(int xy=0;xy<NNF.numel();xy++)
   {
     NNF[xy] = V2i(patchWidth+rand()%(sizeB(0)-2*patchWidth),
@@ -187,7 +194,9 @@ __global__ void krnlVoteWeighted(      TexArray2<N,T,M>   target,
 #endif
 
 template<int N,typename T>
-Vec<N,T> sampleBilinear(const Array2<Vec<N,T>>& I,float x,float y)
+Vec<N,T> sampleBilinear(const Array2<Vec<N,T>>& I,
+                    float x,
+                    float y)
 {
   const int ix = x;
   const int iy = y;
@@ -722,9 +731,9 @@ void ebsynthCpu(int    numStyleChannels,
     pyramid[level].targetHeight = levelTargetSize(1);
   }
 
-  pyramid[levelCount-1].sourceStyle  = Array2<Vec<NS,unsigned char>>(V2i(pyramid[levelCount-1].sourceWidth,pyramid[levelCount-1].sourceHeight));
-  pyramid[levelCount-1].sourceGuide  = Array2<Vec<NG,unsigned char>>(V2i(pyramid[levelCount-1].sourceWidth,pyramid[levelCount-1].sourceHeight));
-  pyramid[levelCount-1].targetGuide  = Array2<Vec<NG,unsigned char>>(V2i(pyramid[levelCount-1].targetWidth,pyramid[levelCount-1].targetHeight));
+  pyramid[levelCount-1].sourceStyle  = Array2<Vec<NS,unsigned char>>(V2i(pyramid[levelCount-1].sourceWidth, pyramid[levelCount-1].sourceHeight));
+  pyramid[levelCount-1].sourceGuide  = Array2<Vec<NG,unsigned char>>(V2i(pyramid[levelCount-1].sourceWidth, pyramid[levelCount-1].sourceHeight));
+  pyramid[levelCount-1].targetGuide  = Array2<Vec<NG,unsigned char>>(V2i(pyramid[levelCount-1].targetWidth, pyramid[levelCount-1].targetHeight));
 
   copy(&pyramid[levelCount-1].sourceStyle,sourceStyleData);
   copy(&pyramid[levelCount-1].sourceGuide,sourceGuideData);
@@ -884,6 +893,16 @@ void ebsynthCpu(int    numStyleChannels,
                      pyramid[level].NNF,
                      pyramid[level].E,
                      pyramid[level].Omega);
+
+          //Save image of every stage of the process
+          std::string img_dir = "result_imgs";
+          std::string img_patmat = "PatchMatch Process";
+          std::string source_style_img_name = ".\\" + img_dir + "\\" + img_patmat + "\\" + std::to_string(level) + "\\" + "SourceStyle" + std::to_string(level) + "_" + std::to_string(voteIter) + ".png";
+          std::string target_style_img_name = ".\\" + img_dir + "\\" + img_patmat + "\\" + std::to_string(level) + "\\" + "TargetStyle" + std::to_string(level) + "_" + std::to_string(voteIter) + ".png";
+          // 
+
+          stbi_write_png(source_style_img_name.c_str(), pyramid[level].sourceWidth,pyramid[level].sourceHeight, 3, pyramid[level].sourceStyle.data(), 3*pyramid[level].sourceWidth);
+          stbi_write_png(target_style_img_name.c_str(), pyramid[level].targetWidth,pyramid[level].targetHeight, 3, pyramid[level].targetStyle.data(), 3*pyramid[level].targetWidth);
         }
       }
       /*
@@ -954,6 +973,15 @@ void ebsynthCpu(int    numStyleChannels,
         */
       }
     }
+        
+      //Save whole image pyramid
+      std::string img_dir = "result_imgs";
+      std::string img_pyramid = "Pyramid";
+      std::string source_style_img_name = ".\\" + img_dir + "\\" + img_pyramid + "\\" + "SourceStyle" + std::to_string(level) + ".png";
+      std::string target_style_img_name = ".\\" + img_dir + "\\" + img_pyramid + "\\" + "TargetStyle" + std::to_string(level) + ".png";
+
+      stbi_write_png(source_style_img_name.c_str(), pyramid[level].sourceWidth,pyramid[level].sourceHeight, 3, pyramid[level].sourceStyle.data(), 3*pyramid[level].sourceWidth);
+      stbi_write_png(target_style_img_name.c_str(), pyramid[level].targetWidth,pyramid[level].targetHeight, 3, pyramid[level].targetStyle.data(), 3*pyramid[level].targetWidth);
 
     if (level==levelCount-1 && (extraPass3x3==0 || (extraPass3x3!=0 && inExtraPass)))
     {      

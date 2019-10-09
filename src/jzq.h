@@ -26,11 +26,13 @@ template<typename T> JZQ_DECORATOR inline T lerp(const T& a,const T& b,float t);
 
 inline std::string spf(const std::string fmt,...);
 
+// Structure creating vector with defined number of values.
 template<int N,typename T>
 struct Vec
 {
   T v[N];
 
+  // Constructors
   JZQ_DECORATOR Vec<N,T>();
   template<typename T2> JZQ_DECORATOR explicit Vec<N,T>(const Vec<N,T2>& u);
   explicit JZQ_DECORATOR Vec<N,T>(T v0);

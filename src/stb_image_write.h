@@ -165,6 +165,7 @@ STBIWDEF int stbi_write_hdr_to_func(stbi_write_func *func, void *context, int w,
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <errno.h>
 
 #if defined(STBIW_MALLOC) && defined(STBIW_FREE) && (defined(STBIW_REALLOC) || defined(STBIW_REALLOC_SIZED))
 // ok
@@ -996,6 +997,8 @@ STBIWDEF int stbi_write_png(char const *filename, int x, int y, int comp, const 
    unsigned char *png = stbi_write_png_to_mem((unsigned char *) data, stride_bytes, x, y, comp, &len);
    if (png == NULL) return 0;
    f = fopen(filename, "wb");
+   if(f==NULL)
+      printf("Error %d \n", errno);
    if (!f) { STBIW_FREE(png); return 0; }
    fwrite(png, 1, len, f);
    fclose(f);

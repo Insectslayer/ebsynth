@@ -7,7 +7,7 @@
 
 #ifndef EBSYNTH_API
   #ifdef WIN32
-    #define EBSYNTH_API __declspec(dllimport)
+    #define EBSYNTH_API //__declspec(dllimport)
   #else
     #define EBSYNTH_API
   #endif
